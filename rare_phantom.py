@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter
 
 def create_3d_grid(shape=(100, 100, 100)):
     """
@@ -54,7 +55,33 @@ def visualize_slice(volume, title="Slice", axis=2, slice_idx=None):
     
     # Save the figure so we can verify it if run remotely, but also show it.
     plt.savefig(f"{title.replace(' ', '_').replace(':', '')}.png", bbox_inches='tight')
-    plt.show()
+    plt.close()
+
+def apply_perlin_wiggle(distance_field, radius=0.4, noise_scale=0.15, noise_smoothness=5.0):
+    """
+    Step 3: Applies a Perlin-like wiggle to deform the spherical seed into an organic shape.
+    Returns:
+        deformed_mask: Boolean mask of the deformed tumor.
+        deformed_distance: The deformed distance field.
+    """
+    print(f"Applying Perlin wiggle (scale={noise_scale}, smoothness={noise_smoothness})...")
+    
+    # Generate random uniform noise
+    random_noise = np.random.rand(*distance_field.shape)
+    
+    # Smooth the noise with a Gaussian filter to make it correlated (like Perlin noise)
+    smoothed_noise = gaussian_filter(random_noise, sigma=noise_smoothness)
+    
+    # Normalize the noise to be centered around 0, between -1 and 1
+    smoothed_noise = (smoothed_noise - np.min(smoothed_noise)) / (np.max(smoothed_noise) - np.min(smoothed_noise))
+    smoothed_noise = smoothed_noise * 2.0 - 1.0
+    
+    # Deform the distance field by adding the noise
+    deformed_distance = distance_field + smoothed_noise * noise_scale
+    
+    # Create the new mask based on the deformed distance
+    deformed_mask = (deformed_distance <= radius).astype(float)
+    return deformed_mask, deformed_distance
 
 if __name__ == "__main__":
     # Define grid resolution
@@ -69,3 +96,10 @@ if __name__ == "__main__":
     # Visualize the center slice
     print("Visualizing the initial seed...")
     visualize_slice(seed_mask, title="Step 2 - Initial Seed")
+    
+    # Step 3: Apply Perlin Wiggle
+    deformed_mask, deformed_distance = apply_perlin_wiggle(distance_field, radius=0.4, noise_scale=0.15, noise_smoothness=5.0)
+    
+    # Visualize the deformed seed
+    print("Visualizing the deformed seed...")
+    visualize_slice(deformed_mask, title="Step 3 - Deformed Seed")
