@@ -83,6 +83,16 @@ def apply_perlin_wiggle(distance_field, radius=0.4, noise_scale=0.15, noise_smoo
     deformed_mask = (deformed_distance <= radius).astype(float)
     return deformed_mask, deformed_distance
 
+def simulate_infiltration(tumor_mask, blur_sigma=2.0):
+    """
+    Step 4: Simulates tumor infiltration into surrounding tissue by softening the edges.
+    Returns:
+        infiltrated_tumor: The continuous (non-binary) tumor representation.
+    """
+    print(f"Simulating infiltration with Gaussian blur (sigma={blur_sigma})...")
+    infiltrated_tumor = gaussian_filter(tumor_mask, sigma=blur_sigma)
+    return infiltrated_tumor
+
 if __name__ == "__main__":
     # Define grid resolution
     grid_shape = (100, 100, 100)
@@ -103,3 +113,10 @@ if __name__ == "__main__":
     # Visualize the deformed seed
     print("Visualizing the deformed seed...")
     visualize_slice(deformed_mask, title="Step 3 - Deformed Seed")
+    
+    # Step 4: Simulate Infiltration
+    infiltrated_tumor = simulate_infiltration(deformed_mask, blur_sigma=2.0)
+    
+    # Visualize the infiltrated tumor
+    print("Visualizing the infiltrated tumor...")
+    visualize_slice(infiltrated_tumor, title="Step 4 - Infiltrated Tumor")
