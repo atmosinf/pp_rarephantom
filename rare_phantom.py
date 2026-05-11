@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 from skimage import measure
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import plotly.graph_objects as go
 
 def create_3d_grid(shape=(100, 100, 100)):
     """
@@ -126,6 +127,43 @@ def visualize_3d(volume, title="3D Tumor"):
     plt.savefig(f"{title.replace(' ', '_').replace(':', '')}.png", bbox_inches='tight')
     plt.close()
 
+def export_interactive_3d(volume, title="Interactive 3D Tumor"):
+    """
+    Step 6: Exports an interactive 3D HTML plot using Plotly.
+    """
+    print(f"Generating interactive 3D model for {title}...")
+    verts, faces, normals, values = measure.marching_cubes(volume, level=0.5)
+    
+    # Create the Plotly mesh
+    fig = go.Figure(data=[go.Mesh3d(
+        x=verts[:, 0],
+        y=verts[:, 1],
+        z=verts[:, 2],
+        i=faces[:, 0],
+        j=faces[:, 1],
+        k=faces[:, 2],
+        color='salmon',
+        opacity=0.8,
+        name=title
+    )])
+    
+    # Update layout for better viewing
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(range=[0, volume.shape[0]]),
+            yaxis=dict(range=[0, volume.shape[1]]),
+            zaxis=dict(range=[0, volume.shape[2]]),
+            aspectmode='cube'
+        ),
+        title_text=title,
+        margin=dict(l=0, r=0, b=0, t=40)
+    )
+    
+    # Save as HTML
+    filename = f"{title.replace(' ', '_').replace(':', '')}.html"
+    fig.write_html(filename)
+    print(f"Saved interactive 3D model to {filename}")
+
 if __name__ == "__main__":
     # Define grid resolution
     grid_shape = (100, 100, 100)
@@ -157,3 +195,6 @@ if __name__ == "__main__":
     # Step 5: Visualize 3D Structure
     print("Visualizing the final tumor in 3D...")
     visualize_3d(infiltrated_tumor, title="Step 5 - 3D Infiltrated Tumor")
+    
+    # Step 6: Export Interactive 3D Model
+    export_interactive_3d(infiltrated_tumor, title="Interactive_Tumor_Model")
