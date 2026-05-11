@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
+from skimage import measure
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def create_3d_grid(shape=(100, 100, 100)):
     """
@@ -93,6 +95,37 @@ def simulate_infiltration(tumor_mask, blur_sigma=2.0):
     infiltrated_tumor = gaussian_filter(tumor_mask, sigma=blur_sigma)
     return infiltrated_tumor
 
+def visualize_3d(volume, title="3D Tumor"):
+    """
+    Step 5: Renders the 3D volume using marching cubes.
+    """
+    print(f"Generating 3D surface mesh for {title}...")
+    
+    # Extract surface mesh using marching cubes
+    # We use a threshold of 0.5 to find the boundary of the mask
+    verts, faces, normals, values = measure.marching_cubes(volume, level=0.5)
+    
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # Create the 3D mesh
+    mesh = Poly3DCollection(verts[faces], alpha=0.8)
+    mesh.set_facecolor('salmon')
+    mesh.set_edgecolor('k')
+    mesh.set_linewidth(0.1)
+    ax.add_collection3d(mesh)
+    
+    ax.set_xlim(0, volume.shape[0])
+    ax.set_ylim(0, volume.shape[1])
+    ax.set_zlim(0, volume.shape[2])
+    
+    # Set viewing angle
+    ax.view_init(elev=20, azim=-45)
+    ax.set_title(title)
+    
+    plt.savefig(f"{title.replace(' ', '_').replace(':', '')}.png", bbox_inches='tight')
+    plt.close()
+
 if __name__ == "__main__":
     # Define grid resolution
     grid_shape = (100, 100, 100)
@@ -120,3 +153,7 @@ if __name__ == "__main__":
     # Visualize the infiltrated tumor
     print("Visualizing the infiltrated tumor...")
     visualize_slice(infiltrated_tumor, title="Step 4 - Infiltrated Tumor")
+    
+    # Step 5: Visualize 3D Structure
+    print("Visualizing the final tumor in 3D...")
+    visualize_3d(infiltrated_tumor, title="Step 5 - 3D Infiltrated Tumor")
